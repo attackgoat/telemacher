@@ -8,7 +8,7 @@ args:
         long: address
         value_name: ADDRESS
         help: Sets the HTTP listen address
-        default_value: localhost
+        default_value: 0.0.0.0
         takes_value: true
     - port:
         short: p
