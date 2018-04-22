@@ -9,9 +9,11 @@ authors = ["john wells <john@attackgoat.com>"]
 # https://github.com/kbknapp/clap-rs
 clap = { version = "2.31", features = ["yaml"] }
 
-# HTTP client/server
+# HTTP client/server plus dependencies
 # https://github.com/actix/actix-web
+actix = "0.5.6"
 actix-web = "0.5.4"
+futures = "0.1"
 
 # JSON https://github.com/maciejhirsz/json-rust
 json = "0.11.13"
