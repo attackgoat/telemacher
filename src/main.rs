@@ -16,7 +16,7 @@ fn chat_messages(req: HttpRequest) -> Response {
 
 fn main() {
     // Load the command-line-argument-parser (CLAP) library
-    let cli_yaml = load_yaml!("../cli.yaml");
+    let cli_yaml = load_yaml!("../cli.yml");
     let clap = ClapApp::from_yaml(cli_yaml).get_matches();
 
     // Load the web server and wait for CTRL + C or SIGTERM
