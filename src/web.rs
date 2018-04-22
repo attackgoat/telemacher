@@ -1,58 +1,71 @@
-use actix_web::{server, App, HttpRequest, HttpResponse, HttpMessage};
-use actix_web::http::Method;
-use actix_web::multipart::MultipartItem;
+use std::io::Error;
 
-use futures::{Future, Stream};
+use futures::future;
 
-// TODO: Investigate Actix web way of doing this -> defaults to 256kb which may be fine: const INCOMING_HTTP_BODY_MAX: usize = 1024;
-const SHUTDOWN_TIMEOUT_SECS: u16 = 1;
+use num_cpus;
 
-pub fn bind_http_and_run(http_binding: &str) {
-    server::new(|| App::new()
-            .resource("/chat/messages", |r| {
-                r.method(Method::POST)
-                    .with(chat_messages);
-            }))
-        .bind(http_binding).expect(&format!("could not bind to {}", http_binding))
-        .shutdown_timeout(SHUTDOWN_TIMEOUT_SECS)
-        .run();
-}
+use tokio_minihttp::{Request, Response, Http};
+use tokio_proto::TcpServer;
+use tokio_service::Service;
 
-fn chat_messages(mut request: HttpRequest) -> HttpResponse {
-    // Collect the input parts into a vector
-    let parts = match request.multipart().collect().wait() {
-        Ok(parts) => parts,
-        _ => return HttpResponse::BadRequest().finish(),
-    };
+// Headers
+const HEADER_CONTENT_TYPE: &'static str = "Content-Type";
 
-    // Parse out common fields
-    let action = find_part(&parts, "action");
-    let user_id = find_part(&parts, "user_id");
+// Mime types
+const MIME_TYPE_APPLICATION_JSON: &'static str = "application/json";
 
-    // Create a new chat request to handle this action
-    match &action {
-        &Some(ref action) if action == "join" => (),
-        &Some(ref action) if action == "message" => (),
-        _ => return HttpResponse::BadRequest().finish(),
-    };
+// Status codes
+const STATUS_CODE_BAD_REQUEST_ALPHA: &'static str = "bad request";
+const STATUS_CODE_BAD_REQUEST_NUMERIC: u32 = 400;
+const STATUS_CODE_NOT_FOUND_ALPHA: &'static str = "not found";
+const STATUS_CODE_NOT_FOUND_NUMERIC: u32 = 404;
 
-    HttpResponse::Ok().finish()
-}
+// Routes
+const ROUTE_CHAT_MESSAGES: &'static str = "/chat/messages";
 
-fn find_part(parts: &[MultipartItem<HttpRequest>], name: &str) -> Option<String> {
-    for part in parts {
-        match part {
-            &MultipartItem::Field(ref item) if item.headers().contains_key(name) => {
-                //let val = item.headers()[name].to_str();
-                //match val {
-                    //Ok(e)
-                //}
+pub struct Router;
 
-                return Some("test".to_string());
-            },
-            _ => (),
-        }
+impl Router {
+    pub fn serve_forever(http_binding: &str) {
+        // Parse input string into the tokio address type
+        let http_binding = http_binding.parse().expect("Unacceptable http binding");
+
+        // The new webserver will use a thread per core
+        let mut server = TcpServer::new(Http, http_binding);
+        server.threads(num_cpus::get());
+        server.serve(|| Ok(Router));
     }
 
-    None
+    fn chat_messages() -> future::Ok<Response, Error> {
+        let mut response = Response::new();
+        response.header(HEADER_CONTENT_TYPE, MIME_TYPE_APPLICATION_JSON)
+            .body(&"{}");
+        future::ok(response)
+    }
+
+    fn bad_request() -> future::Ok<Response, Error> {
+        let mut response = Response::new();
+        response.status_code(STATUS_CODE_BAD_REQUEST_NUMERIC, STATUS_CODE_BAD_REQUEST_ALPHA);
+        future::ok(response)
+    }
+
+    fn not_found() -> future::Ok<Response, Error> {
+        let mut response = Response::new();
+        response.status_code(STATUS_CODE_NOT_FOUND_NUMERIC, STATUS_CODE_NOT_FOUND_ALPHA);
+        future::ok(response)
+    }
+}
+
+impl Service for Router {
+    type Request = Request;
+    type Response = Response;
+    type Error = Error;
+    type Future = future::Ok<Response, Error>;
+
+    fn call(&self, request: Request) -> Self::Future {
+        match request.path() {
+            ROUTE_CHAT_MESSAGES => Self::chat_messages(),
+            _ => Self::not_found(),
+        }
+    }
 }
