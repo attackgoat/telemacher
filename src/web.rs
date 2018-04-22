@@ -36,7 +36,7 @@ impl Router {
         server.serve(|| Ok(Router));
     }
 
-    fn chat_messages() -> Response {
+    fn chat_messages(&self, request: &Request) -> Response {
         let mut response = Response::new();
 
         println!("Hello, world!");
@@ -67,7 +67,7 @@ impl Service for Router {
 
     fn call(&self, request: Request) -> Self::Future {
         future::ok(match request.path() {
-            ROUTE_CHAT_MESSAGES => Self::chat_messages(),
+            ROUTE_CHAT_MESSAGES => self.chat_messages(&request),
             _ => Self::not_found(),
         })
     }
