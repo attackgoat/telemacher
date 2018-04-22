@@ -1,2 +1,3 @@
+sudo: required # For snips ai to buid properly
 language: rust
 cache: cargo
