@@ -11,6 +11,9 @@ use tokio_service::Service;
 // Headers
 const HEADER_CONTENT_TYPE: &'static str = "Content-Type";
 
+// Methods
+const METHOD_POST: &'static str = "POST";
+
 // Mime types
 const MIME_TYPE_APPLICATION_JSON: &'static str = "application/json";
 
@@ -38,6 +41,8 @@ impl Router {
 
     fn chat_messages(&self, request: &Request) -> Response {
         let mut response = Response::new();
+
+
 
         println!("Hello, world!");
 
@@ -67,7 +72,7 @@ impl Service for Router {
 
     fn call(&self, request: Request) -> Self::Future {
         future::ok(match request.path() {
-            ROUTE_CHAT_MESSAGES => self.chat_messages(&request),
+            ROUTE_CHAT_MESSAGES if request.method() == METHOD_POST => self.chat_messages(&request),
             _ => Self::not_found(),
         })
     }
