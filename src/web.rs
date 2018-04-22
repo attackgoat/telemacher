@@ -36,23 +36,26 @@ impl Router {
         server.serve(|| Ok(Router));
     }
 
-    fn chat_messages() -> future::Ok<Response, Error> {
+    fn chat_messages() -> Response {
         let mut response = Response::new();
+
+        println!("Hello, world!");
+
         response.header(HEADER_CONTENT_TYPE, MIME_TYPE_APPLICATION_JSON)
             .body(&"{}");
-        future::ok(response)
+        response
     }
 
-    fn bad_request() -> future::Ok<Response, Error> {
+    fn bad_request() -> Response {
         let mut response = Response::new();
         response.status_code(STATUS_CODE_BAD_REQUEST_NUMERIC, STATUS_CODE_BAD_REQUEST_ALPHA);
-        future::ok(response)
+        response
     }
 
-    fn not_found() -> future::Ok<Response, Error> {
+    fn not_found() -> Response {
         let mut response = Response::new();
         response.status_code(STATUS_CODE_NOT_FOUND_NUMERIC, STATUS_CODE_NOT_FOUND_ALPHA);
-        future::ok(response)
+        response
     }
 }
 
@@ -63,9 +66,9 @@ impl Service for Router {
     type Future = future::Ok<Response, Error>;
 
     fn call(&self, request: Request) -> Self::Future {
-        match request.path() {
+        future::ok(match request.path() {
             ROUTE_CHAT_MESSAGES => Self::chat_messages(),
             _ => Self::not_found(),
-        }
+        })
     }
 }
