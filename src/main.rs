@@ -3,32 +3,42 @@ extern crate actix_web as web;
 #[macro_use]
 extern crate clap;
 
-use clap::App as ClapApp;
+//#[macro_use]
+extern crate json;
 
-use web::{server, App as WebApp, Error as WebError, HttpResponse, HttpRequest, Responder};
-use web::http::Method as HttpMethod;
+use std::cell::RefCell;
+use std::io::Read;
+use std::str;
 
-fn chat_messages(req: HttpRequest) -> Response {
-    Response {
-        messages: vec![],
-    }
+use web::{server, App as WebApp, HttpResponse, HttpRequest};
+use web::http::{ContentEncoding, Method};
+
+const INCOMING_HTTP_BODY_MAX: usize = 1024;
+
+fn chat_messages(mut request: HttpRequest) -> HttpResponse {
+    HttpResponse::Ok()
+        .content_type("application/json")
+        .body("")
 }
 
 fn main() {
     // Load the command-line-argument-parser (CLAP) library
-    let cli_yaml = load_yaml!("../cli.yml");
-    let clap = ClapApp::from_yaml(cli_yaml).get_matches();
+    let cli = load_yaml!("../cli.yml");
+    let clap = clap::App::from_yaml(&cli).get_matches();
 
-    // Load the web server and wait for CTRL + C or SIGTERM
+    // Figure out what address the web server binds to
     let address = clap.value_of("address").unwrap();
     let port = clap.value_of("port").unwrap();
-    let http_binding = format!("{}:{}", address, port);
+    let http_binding = format!("{}:{}", &address, &port);
+    println!("telemacher binding to http://{}\n[press CTRL + C to stop]", &http_binding);
+
+    // Load the web server and wait for CTRL + C or SIGTERM
     server::new(|| WebApp::new()
-            .route("/chat/messages", HttpMethod::POST, chat_messages))
-        .bind(&http_binding).expect(&format!("Cannot bind to {}", &http_binding))
+            .default_encoding(ContentEncoding::Auto)
+            .route("/chat/messages", Method::POST, chat_messages))
+        .bind(&http_binding).expect(&format!("could not bind to {}", &http_binding))
         .run();
 }
-
 
 enum Request {
     Join(Join),
@@ -47,16 +57,4 @@ struct Message {
 
 struct Response {
     messages: Vec<String>,
-}
-
-impl Responder for Response {
-    type Item = HttpResponse;
-    type Error = WebError;
-
-    fn respond_to(self, _request: HttpRequest) -> Result<HttpResponse, WebError> {
-        // Create response and set content type
-        Ok(HttpResponse::Ok()
-            .content_type("application/json")
-            .body(""))
-    }
 }
