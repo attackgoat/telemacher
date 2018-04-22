@@ -1,0 +1,22 @@
+name: telemacher
+version: "0.1.0"
+author: john wells <john@attackgoat.com>
+about: A chat server
+args:
+    - address:
+        short: a
+        long: address
+        value_name: ADDRESS
+        help: Sets the HTTP listen address
+        default_value: localhost
+        takes_value: true
+    - port:
+        short: p
+        long: port
+        value_name: PORT
+        help: Sets the HTTP listen port number
+        default_value: "9000"
+        takes_value: true
+subcommands:
+    - flush:
+        about: Flushes geo and weather cache data
