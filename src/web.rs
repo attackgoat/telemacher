@@ -1,4 +1,5 @@
 use std::io::Error;
+use std::str;
 
 use futures::future;
 
@@ -7,6 +8,9 @@ use num_cpus;
 use tokio_minihttp::{Request, Response, Http};
 use tokio_proto::TcpServer;
 use tokio_service::Service;
+
+// Panics
+const PANIC_UNACCEPTABLE_HTTP_BINDING: &'static str = "Unacceptable http binding";
 
 // Headers
 const HEADER_CONTENT_TYPE: &'static str = "Content-Type";
@@ -26,12 +30,24 @@ const STATUS_CODE_NOT_FOUND_NUMERIC: u32 = 404;
 // Routes
 const ROUTE_CHAT_MESSAGES: &'static str = "/chat/messages";
 
+fn get_header(request: &Request, key: &str) -> Option<String> {
+    for (header_key, header_val) in request.headers() {
+        if key == header_key {
+            if let Ok(val) = str::from_utf8(header_val) {
+                return Some(val.to_owned());
+            }
+        }
+    }
+
+    None
+}
+
 pub struct Router;
 
 impl Router {
     pub fn serve_forever(http_binding: &str) {
         // Parse input string into the tokio address type
-        let http_binding = http_binding.parse().expect("Unacceptable http binding");
+        let http_binding = http_binding.parse().expect(PANIC_UNACCEPTABLE_HTTP_BINDING);
 
         // The new webserver will use a thread per core
         let mut server = TcpServer::new(Http, http_binding);
@@ -40,6 +56,22 @@ impl Router {
     }
 
     fn chat_messages(&self, request: &Request) -> Response {
+        // Get any required headers
+        let content_type = get_header(request, HEADER_CONTENT_TYPE);
+
+        // Sanity check: Must have Content-Type
+        if let None = content_type {
+            return Self::bad_request();
+        }
+
+        // This will always succeed because it's not-none
+        let content_type = content_type.unwrap();
+
+        // Sanity check: Content-Type must be form data
+        //if 
+
+
+
         let mut response = Response::new();
 
 
