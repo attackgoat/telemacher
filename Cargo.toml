@@ -11,7 +11,7 @@ clap = { version = "2.31", features = ["yaml"] }
 
 # HTTP server
 futures = "0.1.11"
-tokio-minihttp = { git = "https://github.com/tokio-rs/tokio-minihttp", branch = "master" }
+tokio-minihttp = { git = "https://github.com/attackgoat/tokio-minihttp", branch = "master" }
 tokio-core = "0.1.0"
 tokio-io = "0.1"
 tokio-proto = "0.1"

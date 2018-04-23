@@ -1,7 +1,9 @@
-use std::io::Error;
+use std::io::{Error, Read};
 use std::str;
 
 use futures::future;
+
+use multipart::server::Multipart;
 
 use num_cpus;
 
@@ -32,6 +34,20 @@ const STATUS_CODE_NOT_FOUND_NUMERIC: u32 = 404;
 // Routes
 const ROUTE_CHAT_MESSAGES: &'static str = "/chat/messages";
 
+// Form data
+const FORM_DATA_ACTION: &'static str = "action";
+const FORM_DATA_USER_ID: &'static str = "user_id";
+
+// Actions
+const ACTION_JOIN: &'static str = "join";
+const ACTION_MESSAGE: &'static str = "message";
+
+fn bad_request() -> Response {
+    let mut response = Response::new();
+    response.status_code(STATUS_CODE_BAD_REQUEST_NUMERIC, STATUS_CODE_BAD_REQUEST_ALPHA);
+    response
+}
+
 fn get_header(request: &Request, key: &str) -> Option<String> {
     let key = key.to_lowercase();
     for (header_key, header_val) in request.headers() {
@@ -43,6 +59,61 @@ fn get_header(request: &Request, key: &str) -> Option<String> {
     }
 
     None
+}
+
+fn not_found() -> Response {
+    let mut response = Response::new();
+    response.status_code(STATUS_CODE_NOT_FOUND_NUMERIC, STATUS_CODE_NOT_FOUND_ALPHA);
+    response
+}
+
+fn try_get_multipart(request: &Request) -> Option<Multipart<&[u8]>> {
+    // Get any required headers
+    let content_type = get_header(request, HEADER_CONTENT_TYPE);
+
+    // Sanity check: Must have Content-Type
+    if let None = content_type {
+        return None;
+    }
+
+    // This will always succeed because it's not-none
+    let content_type = content_type.unwrap();
+    let content_type_parts: Vec<&str> = content_type.split(';').collect();
+
+    // Sanity check: Content-Type must be form data
+    if content_type_parts.len() < 2 || content_type_parts[0].to_lowercase().trim() != MIME_TYPE_MULTIPART_FORM_DATA {
+        return None;
+    }
+
+    // This is the header we're parsing to find the boundary:
+    // Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryhtiHGRJWxqAGATpt
+    let boundary_parts: Vec<&str> = content_type_parts[1].split('=').collect();
+
+    // Sanity check: Content-Type must have boundary
+    if boundary_parts.len() != 2 || boundary_parts[0].to_lowercase().trim() != HEADER_BOUNDARY {
+        return None;
+    }
+
+    // This will always succeed because we checked above
+    let boundary = boundary_parts[1].trim();
+    Some(Multipart::with_body(request.body(), boundary))
+}
+
+fn try_parse_utf8<R: Read>(data: R) -> Option<String> {
+    let mut buf = vec![];
+    for byte in data.bytes() {
+        if let Ok(byte) = byte {
+            buf.push(byte);
+        } else {
+            return None;
+        }
+    }
+
+    if let Ok(s) = str::from_utf8(&buf) {
+        Some(s.to_owned())
+    } else {
+        None
+    }
 }
 
 pub struct Router;
@@ -59,37 +130,46 @@ impl Router {
     }
 
     fn chat_messages(&self, request: &Request) -> Response {
-        // Get any required headers
-        let content_type = get_header(request, HEADER_CONTENT_TYPE);
-
-        // Sanity check: Must have Content-Type
-        if let None = content_type {
-            return Self::bad_request();
+        // Sanity check: Must have multipart data
+        let multipart = try_get_multipart(request);
+        if let None = multipart {
+            return bad_request();
         }
 
-        // This will always succeed because it's not-none
-        let content_type = content_type.unwrap();
-        let content_type_parts: Vec<&str> = content_type.split(';').collect();
+        // Parse out the first two fields which are common to all requests
+        let mut action = None;
+        let mut user_id = None;
+        let mut multipart = multipart.unwrap();
+        let iter = multipart.foreach_entry(|e| {
+            match e.headers.name.trim().to_lowercase().as_ref() {
+                FORM_DATA_ACTION => action = try_parse_utf8(e.data),
+                FORM_DATA_USER_ID => user_id = try_parse_utf8(e.data),
+                _ => (),
+            }
+        });
 
-        // Sanity check: Content-Type must be form data
-        if content_type_parts.len() < 2 || content_type_parts[0].to_lowercase().trim() != MIME_TYPE_MULTIPART_FORM_DATA {
-            return Self::bad_request();
+        // Sanity check: We should have action and user_id
+        if iter.is_err() || action.is_none() || user_id.is_none() {
+            return bad_request();
         }
 
-        // This is the header we're parsing to find the boundary:
-        // Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryhtiHGRJWxqAGATpt
-        let boundary_parts: Vec<&str> = content_type_parts[1].split('=').collect();
-
-        // Sanity check: Content-Type must have boundary
-        if boundary_parts.len() != 2 || boundary_parts[0].to_lowercase().trim() != HEADER_BOUNDARY {
-            return Self::bad_request();
+        // Sanity check: user_id should be numeric
+        let user_id: Result<u64, _> = user_id.unwrap().trim().parse();
+        if let Err(_) = user_id {
+            return bad_request();
         }
 
-        // This will always succeed because we checked above
-        let boundary = boundary_parts[1].trim();
-
-        println!("<{}>", boundary);
-    
+        // Parse the correct message type
+        let user_id = user_id.unwrap();
+        let msg = match action.unwrap().trim().to_lowercase().as_ref() {
+            ACTION_JOIN => {
+                ()
+            },
+            ACTION_MESSAGE => {
+                ()
+            },
+            _ => return bad_request(),
+        };
 
         let mut response = Response::new();
 
@@ -97,18 +177,6 @@ impl Router {
 
         response.header(HEADER_CONTENT_TYPE, MIME_TYPE_APPLICATION_JSON)
             .body(&"{}");
-        response
-    }
-
-    fn bad_request() -> Response {
-        let mut response = Response::new();
-        response.status_code(STATUS_CODE_BAD_REQUEST_NUMERIC, STATUS_CODE_BAD_REQUEST_ALPHA);
-        response
-    }
-
-    fn not_found() -> Response {
-        let mut response = Response::new();
-        response.status_code(STATUS_CODE_NOT_FOUND_NUMERIC, STATUS_CODE_NOT_FOUND_ALPHA);
         response
     }
 }
@@ -122,7 +190,7 @@ impl Service for Router {
     fn call(&self, request: Request) -> Self::Future {
         future::ok(match request.path() {
             ROUTE_CHAT_MESSAGES if request.method().to_uppercase().trim() == METHOD_POST => self.chat_messages(&request),
-            _ => Self::not_found(),
+            _ => not_found(),
         })
     }
 }
