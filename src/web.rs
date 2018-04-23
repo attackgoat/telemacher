@@ -13,6 +13,7 @@ use tokio_service::Service;
 const PANIC_UNACCEPTABLE_HTTP_BINDING: &'static str = "Unacceptable http binding";
 
 // Headers
+const HEADER_BOUNDARY: &'static str = "boundary";
 const HEADER_CONTENT_TYPE: &'static str = "Content-Type";
 
 // Methods
@@ -20,6 +21,7 @@ const METHOD_POST: &'static str = "POST";
 
 // Mime types
 const MIME_TYPE_APPLICATION_JSON: &'static str = "application/json";
+const MIME_TYPE_MULTIPART_FORM_DATA: &'static str = "multipart/form-data";
 
 // Status codes
 const STATUS_CODE_BAD_REQUEST_ALPHA: &'static str = "bad request";
@@ -33,7 +35,7 @@ const ROUTE_CHAT_MESSAGES: &'static str = "/chat/messages";
 fn get_header(request: &Request, key: &str) -> Option<String> {
     let key = key.to_lowercase();
     for (header_key, header_val) in request.headers() {
-        if key == header_key.to_lowercase() {
+        if key == header_key.to_lowercase().trim() {
             if let Ok(val) = str::from_utf8(header_val) {
                 return Some(val.to_owned());
             }
@@ -67,17 +69,31 @@ impl Router {
 
         // This will always succeed because it's not-none
         let content_type = content_type.unwrap();
+        let content_type_parts: Vec<&str> = content_type.split(';').collect();
 
         // Sanity check: Content-Type must be form data
-        //if 
+        if content_type_parts.len() < 2 || content_type_parts[0].to_lowercase().trim() != MIME_TYPE_MULTIPART_FORM_DATA {
+            return Self::bad_request();
+        }
 
+        // This is the header we're parsing to find the boundary:
+        // Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryhtiHGRJWxqAGATpt
+        let boundary_parts: Vec<&str> = content_type_parts[1].split('=').collect();
 
+        // Sanity check: Content-Type must have boundary
+        if boundary_parts.len() != 2 || boundary_parts[0].to_lowercase().trim() != HEADER_BOUNDARY {
+            return Self::bad_request();
+        }
+
+        // This will always succeed because we checked above
+        let boundary = boundary_parts[1].trim();
+
+        println!("<{}>", boundary);
+    
 
         let mut response = Response::new();
 
 
-
-        println!("Hello, world!");
 
         response.header(HEADER_CONTENT_TYPE, MIME_TYPE_APPLICATION_JSON)
             .body(&"{}");
@@ -105,7 +121,7 @@ impl Service for Router {
 
     fn call(&self, request: Request) -> Self::Future {
         future::ok(match request.path() {
-            ROUTE_CHAT_MESSAGES if request.method().to_uppercase() == METHOD_POST => self.chat_messages(&request),
+            ROUTE_CHAT_MESSAGES if request.method().to_uppercase().trim() == METHOD_POST => self.chat_messages(&request),
             _ => Self::not_found(),
         })
     }
