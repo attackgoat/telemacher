@@ -2,6 +2,7 @@
 extern crate chrono;
 extern crate futures;
 #[macro_use] extern crate json;
+extern crate lru_cache;
 extern crate multipart;
 extern crate num_cpus;
 extern crate reqwest;

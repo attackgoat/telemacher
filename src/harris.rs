@@ -5,7 +5,7 @@ use snips_nlu_ontology::{Slot, SlotValue};
 
 use cli::get_training_file;
 use dark_sky::try_get_forecast;
-use google_maps::try_get_lat_lng;
+use google_maps::GoogleApi;
 
 pub enum Event {
     Join(Join),
@@ -14,35 +14,8 @@ pub enum Event {
 
 pub struct Harris {
     //notes: HashMap<u64, HashMap<String, String>>
+    google_api: GoogleApi,
     nlu_engine: SnipsNluEngine,
-}
-
-pub struct Join {
-    name: String,
-    #[allow(dead_code)] user_id: u64,
-}
-
-impl Join {
-    pub fn new<N: Into<String>>(user_id: u64, name: N) -> Self {
-        Self {
-            name: name.into(),
-            user_id: user_id,
-        }
-    }
-}
-
-pub struct Message {
-    text: String,
-    #[allow(dead_code)] user_id: u64,
-}
-
-impl Message {
-    pub fn new<N: Into<String>>(user_id: u64, text: N) -> Self {
-        Self {
-            text: text.into(),
-            user_id: user_id,
-        }
-    }
 }
 
 impl Harris {
@@ -60,7 +33,7 @@ impl Harris {
                     &Some(ref i) if i.probability > 0.5
                                     && nlu.slots.is_some()
                                     && (&i.intent_name == "searchWeatherForecast" || &i.intent_name == "searchWeatherForecastCondition") => {
-                                        Self::respond_weather(&nlu.slots.unwrap())
+                                        self.respond_weather(&nlu.slots.unwrap())
                                     },
                     _ => Self::respond_unsure(),
                 }
@@ -77,7 +50,7 @@ impl Harris {
         "Hmm. That is fascinating. Ask me about the weather where you live.".to_owned()
     }
 
-    fn respond_weather(slots: &[Slot]) -> String {
+    fn respond_weather(&self, slots: &[Slot]) -> String {
         // Pick out the values from slots; could be simpler but this form allows for the use of all
         // value formats offered by the library and a way to handle each type according to our needs
         let mut forecast_condition_name = None;
@@ -194,7 +167,7 @@ impl Harris {
         // desired_forecast: Option<Forecast>
 
         // Step 1: Process locality string into lat/lng
-        let lat_lng = try_get_lat_lng(&forecast_locality);
+        let lat_lng = self.google_api.try_get_lat_lng(&forecast_locality);
 
         // Sanity check: We may have been unable to do that
         if let None = lat_lng {
@@ -205,7 +178,7 @@ impl Harris {
         let (lat, lng) = lat_lng.unwrap();
         let forecast = try_get_forecast(lat, lng);
 
-        "".to_owned()
+        format!("{} = {},{}", &forecast_locality, lat, lng)
     }
 }
 
@@ -215,7 +188,36 @@ impl Default for Harris {
         let nlu_engine = SnipsNluEngine::new(config).expect("Unacceptable nlu configuration");
 
         Self {
+            google_api: Default::default(),
             nlu_engine: nlu_engine,
+        }
+    }
+}
+
+pub struct Join {
+    name: String,
+    #[allow(dead_code)] user_id: u64,
+}
+
+impl Join {
+    pub fn new<N: Into<String>>(user_id: u64, name: N) -> Self {
+        Self {
+            name: name.into(),
+            user_id: user_id,
+        }
+    }
+}
+
+pub struct Message {
+    text: String,
+    #[allow(dead_code)] user_id: u64,
+}
+
+impl Message {
+    pub fn new<N: Into<String>>(user_id: u64, text: N) -> Self {
+        Self {
+            text: text.into(),
+            user_id: user_id,
         }
     }
 }
