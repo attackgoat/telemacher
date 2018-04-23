@@ -1,4 +1,4 @@
-# telemacher
+# telemacher [![Build Status](https://travis-ci.org/attackgoat/telemacher.svg?branch=master)](https://travis-ci.org/attackgoat/telemacher)
 "We've got sun, earth, and atmosphere, and when you've got that, you've got weather!" - Harris K. Telemacher
 
 # Compilation Guide
