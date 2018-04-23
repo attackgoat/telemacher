@@ -49,3 +49,7 @@ SUBCOMMANDS:
     flush    Flushes geo and weather cache data
     help     Prints this message or the help of the given subcommand(s)
 ```
+
+## Footnotes
+
+A number of external projects with compatible licenses have been linked into this project. These include the items listed under `[dependencies]` in `/Cargo.toml` and the full un-edited text of `trained-assistant.json` from the Snips NLU library. The provided training material is rather basic and only understands a few queries and localities/spellings, this should be trained properly for actual use.
