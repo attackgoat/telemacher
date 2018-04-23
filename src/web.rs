@@ -200,6 +200,7 @@ impl Router {
         let mut response = Response::new();
         response.header(HEADER_CONTENT_TYPE, MIME_TYPE_APPLICATION_JSON);
         response.body(&object!{
+
             "messages" => array![object!{
                 "type" => "text",
                 "text" => chat_response,
