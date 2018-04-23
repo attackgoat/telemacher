@@ -1,5 +1,7 @@
 use cli::get_training_file;
 
+use snips_nlu_lib::{FileBasedConfiguration, SnipsNluEngine};
+
 pub enum Event {
     Join(Join),
     Message(Message),
@@ -7,7 +9,7 @@ pub enum Event {
 
 pub struct Harris {
     //notes: HashMap<u64, HashMap<String, String>>
-
+    nlu_engine: SnipsNluEngine,
 }
 
 pub struct Join {
@@ -44,9 +46,13 @@ impl Harris {
             &Event::Join(ref j) => {
                 // Joining responds the same way every time. This could be extended to either a larger
                 // list of interesting 'leads' or memory of a previous chat, etc.
-                format!("Hello, {}! I can answer your weather questions.", j.name)
+                // https://goo.gl/rFY8XX
+                format!("Hello, {}, this is Harris. I'm in right now, so you can talk to me personally.", j.name)
             },
             &Event::Message(ref m) => {
+                let _ = self.nlu_engine.parse(&m.text, None).expect("nlu failure");
+
+                //println!("{}", serde_json::to_string_pretty(&result).unwrap());
                 m.text.to_owned()
             }
         }
@@ -55,8 +61,11 @@ impl Harris {
 
 impl Default for Harris {
     fn default() -> Self {
-        Self {
+        let config = FileBasedConfiguration::from_path(get_training_file(), false).expect("Unacceptable training file");
+        let nlu_engine = SnipsNluEngine::new(config).expect("Unacceptable nlu configuration");
 
+        Self {
+            nlu_engine: nlu_engine,
         }
     }
 }
