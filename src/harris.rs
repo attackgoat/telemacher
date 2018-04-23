@@ -1,11 +1,9 @@
-use chrono::Local;
-
 use snips_nlu_lib::{FileBasedConfiguration, SnipsNluEngine};
-use snips_nlu_ontology::{Slot, SlotValue};
+use snips_nlu_ontology::{Slot, SlotValue, Grain};
 
 use cli::get_training_file;
-use dark_sky::try_get_forecast;
-use google_maps::GoogleApi;
+use dark_sky::DarkSkyApi;
+use google::GoogleApi;
 
 pub enum Event {
     Join(Join),
@@ -13,7 +11,7 @@ pub enum Event {
 }
 
 pub struct Harris {
-    //notes: HashMap<u64, HashMap<String, String>>
+    dark_sky_api: DarkSkyApi,
     google_api: GoogleApi,
     nlu_engine: SnipsNluEngine,
 }
@@ -88,7 +86,7 @@ impl Harris {
                 },
                 s if &s.slot_name == "forecast_start_datetime" => {
                     if let &SlotValue::InstantTime(ref v) = &s.value {
-                        forecast_start_datetime = Some(v.value.to_owned());
+                        forecast_start_datetime = Some((v.value.to_owned(), v.grain));
                     }
                 },
                 _ => (),
@@ -114,16 +112,11 @@ impl Harris {
             return Self::respond_unsure();
         }
 
-        // If we didn't receive a date/time for the weather forecast then we should use now
-        if let None = forecast_start_datetime {
-            forecast_start_datetime = Some(Local::now().to_string());
-        }
-
         let forecast_locality = forecast_locality.unwrap();
         let forecast_start_datetime = forecast_start_datetime.unwrap();
 
         // See if we can further answer their specific question (these items must be in the training set)
-        enum Forecast {
+        enum SpecificForecast {
             Snow,
             Wind,
             Hail,
@@ -137,17 +130,17 @@ impl Harris {
                          || v == "snowfall"
                          || v == "snowing"
                          || v == "snowstorm"
-                         || v == "snowy" => Some(Forecast::Snow),
+                         || v == "snowy" => Some(SpecificForecast::Snow),
             &Some(ref v) if v == "wind"
-                         || v == "windy" => Some(Forecast::Wind),
+                         || v == "windy" => Some(SpecificForecast::Wind),
             &Some(ref v) if v == "hail"
-                         || v == "hailing" => Some(Forecast::Hail),
-            &Some(ref v) if v == "humid" => Some(Forecast::Humidity),
+                         || v == "hailing" => Some(SpecificForecast::Hail),
+            &Some(ref v) if v == "humid" => Some(SpecificForecast::Humidity),
             &Some(ref v) if v == "storm"
                          || v == "stormy"
                          || v == "rain"
                          || v == "rainfall"
-                         || v == "rainy" => Some(Forecast::Precipitation),
+                         || v == "rainy" => Some(SpecificForecast::Precipitation),
             &Some(ref v) if v == "cloud"
                          || v == "cloudi"
                          || v == "overcast"
@@ -157,14 +150,14 @@ impl Harris {
                          || v == "sun"
                          || v == "sunni"
                          || v == "hot"
-                         || v == "be sunni" => Some(Forecast::Uv),
+                         || v == "be sunni" => Some(SpecificForecast::Uv),
             _ => None,
         };
 
         // At this point we know they're asking about weather. We also have:
         // forecast_locality: String
         // forecast_start_datetime: String
-        // desired_forecast: Option<Forecast>
+        // desired_forecast: Option<DesiredForecast>
 
         // Step 1: Process locality string into lat/lng
         let lat_lng = self.google_api.try_get_lat_lng(&forecast_locality);
@@ -176,7 +169,31 @@ impl Harris {
 
         // Step 2: Go check the weather
         let (lat, lng) = lat_lng.unwrap();
-        let forecast = try_get_forecast(lat, lng);
+        let forecast = self.dark_sky_api.try_get_forecast(lat, lng);
+
+        match desired_forecast {
+            None => {
+
+            },
+            Some(SpecificForecast::Hail) => {
+                
+            },
+            Some(SpecificForecast::Humidity) => {
+
+            },
+            Some(SpecificForecast::Precipitation) => {
+
+            },
+            Some(SpecificForecast::Snow) => {
+
+            },
+            Some(SpecificForecast::Uv) => {
+
+            },
+            Some(SpecificForecast::Wind) => {
+
+            },
+        };
 
         format!("{} = {},{}", &forecast_locality, lat, lng)
     }
@@ -188,6 +205,7 @@ impl Default for Harris {
         let nlu_engine = SnipsNluEngine::new(config).expect("Unacceptable nlu configuration");
 
         Self {
+            dark_sky_api: Default::default(),
             google_api: Default::default(),
             nlu_engine: nlu_engine,
         }

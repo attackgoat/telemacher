@@ -5,7 +5,6 @@ authors = ["john wells <john@attackgoat.com>"]
 
 [dependencies]
 num_cpus = "1.0"        # For thread-pool size guessing
-chrono = "0.4"          # For date/time parsing 
 lru-cache = "0.1.1"     # As a stand-in for proper redis
 urlencoding = "1.0.0"   # Used by Google/Dark Sky client code
 

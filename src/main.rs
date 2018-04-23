@@ -1,5 +1,4 @@
 #[macro_use] extern crate clap;
-extern crate chrono;
 extern crate futures;
 #[macro_use] extern crate json;
 extern crate lru_cache;
@@ -15,7 +14,7 @@ extern crate urlencoding;
 
 mod cli;
 mod dark_sky;
-mod google_maps;
+mod google;
 mod harris;
 mod web;
 
