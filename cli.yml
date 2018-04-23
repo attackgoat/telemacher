@@ -17,6 +17,13 @@ args:
         help: Sets the HTTP listen port number
         default_value: "9000"
         takes_value: true
+    - training:
+        short: t
+        long: training
+        value_name: FILE
+        help: Sets the (json) training file
+        default_value: trained-assistant.json
+        takes_value: true
 subcommands:
     - flush:
         about: Flushes geo and weather cache data

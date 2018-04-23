@@ -11,7 +11,7 @@ use tokio_minihttp::{Request, Response, Http};
 use tokio_proto::TcpServer;
 use tokio_service::Service;
 
-use super::chat::{Request as ChatRequest, Server as ChatServer, Join, Message};
+use super::chat::{Event, Harris, Join, Message};
 
 // Panics
 const PANIC_UNACCEPTABLE_HTTP_BINDING: &'static str = "Unacceptable http binding";
@@ -124,7 +124,7 @@ fn try_parse_utf8<R: Read>(data: R) -> Option<String> {
 }
 
 pub struct Router {
-    chat_server: ChatServer,
+    harris: Harris,
 }
 
 impl Router {
@@ -180,7 +180,7 @@ impl Router {
                     return bad_request();
                 }
 
-                ChatRequest::Join(Join::new(user_id.unwrap(), name.unwrap()))
+                Event::Join(Join::new(user_id.unwrap(), name.unwrap()))
             },
             ACTION_MESSAGE => {
                 // Sanity check: We should have text
@@ -188,13 +188,13 @@ impl Router {
                     return bad_request();
                 }
 
-                ChatRequest::Message(Message::new(user_id.unwrap(), text.unwrap()))
+                Event::Message(Message::new(user_id.unwrap(), text.unwrap()))
             },
             _ => return bad_request(),
         };
 
         // Process the chat logic and produce a one-liner response
-        let chat_response = self.chat_server.respond(&msg);
+        let chat_response = self.harris.respond(&msg);
 
         // Respond to the client using json
         let mut response = Response::new();
@@ -220,7 +220,7 @@ impl Router {
 impl Default for Router {
     fn default() -> Self {
         Self {
-            chat_server: ChatServer::default()
+            harris: Default::default()
         }
     }
 }

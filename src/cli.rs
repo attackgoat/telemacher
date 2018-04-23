@@ -8,3 +8,10 @@ pub fn get_http_binding() -> String {
     let port = app.value_of("port").unwrap();
     format!("{}:{}", &address, &port)
 }
+
+pub fn get_training_file() -> String {
+    // Load the command-line-argument-parser (CLAP) library
+    let cli = load_yaml!("../cli.yml");
+    let app = App::from_yaml(&cli).get_matches();
+    app.value_of("training").unwrap().to_owned()
+}

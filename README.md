@@ -44,6 +44,7 @@ FLAGS:
 OPTIONS:
     -a, --address <ADDRESS>    Sets a listen address for incoming HTTP messages [default: localhost]
     -p, --port <PORT>          Sets a listen port for incoming HTTP messages [default: 9000]
+    -t, --training <FILE>      Sets the (json) training file [default: trained-assistant.json]
 
 SUBCOMMANDS:
     flush    Flushes geo and weather cache data
