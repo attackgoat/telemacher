@@ -1,6 +1,7 @@
 #[macro_use] extern crate clap;
 extern crate futures;
 #[macro_use] extern crate json;
+extern crate multipart;
 extern crate num_cpus;
 extern crate tokio_minihttp;
 extern crate tokio_proto;

@@ -17,6 +17,9 @@ tokio-io = "0.1"
 tokio-proto = "0.1"
 tokio-service = "0.1"
 
+# Multipart parser https://github.com/abonander/multipart
+multipart = { version = "0.14.2", features = ["server"] }
+
 # JSON https://github.com/maciejhirsz/json-rust
 json = "0.11.13"
 
