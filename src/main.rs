@@ -10,9 +10,10 @@ extern crate tokio_minihttp;
 extern crate tokio_proto;
 extern crate tokio_service;
 
-mod chat;
 mod cli;
-mod weather;
+mod dark_sky;
+mod google_maps;
+mod harris;
 mod web;
 
 use cli::get_http_binding;

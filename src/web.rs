@@ -11,7 +11,7 @@ use tokio_minihttp::{Request, Response, Http};
 use tokio_proto::TcpServer;
 use tokio_service::Service;
 
-use super::chat::{Event, Harris, Join, Message};
+use super::harris::{Event, Harris, Join, Message};
 
 // Panics
 const PANIC_UNACCEPTABLE_HTTP_BINDING: &'static str = "Unacceptable http binding";
