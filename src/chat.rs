@@ -37,7 +37,7 @@ pub struct Server {
 
 impl Server {
     pub fn respond(&self, request: &Request) -> String {
-        String::new()
+        String::from("Hello, world!")
     }
 }
 

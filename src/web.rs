@@ -17,8 +17,11 @@ use super::chat::{Request as ChatRequest, Server as ChatServer, Join, Message};
 const PANIC_UNACCEPTABLE_HTTP_BINDING: &'static str = "Unacceptable http binding";
 
 // Headers
+const HEADER_ACCESS_CONTROL_ALLOW_ORIGIN: &'static str = "Access-Control-Allow-Origin";
+const HEADER_ACCESS_CONTROL_ALLOW_ORIGIN_STAR: &'static str = "*";
 const HEADER_BOUNDARY: &'static str = "boundary";
 const HEADER_CONTENT_TYPE: &'static str = "Content-Type";
+const HEADER_ORIGIN: &'static str = "Origin";
 
 // Methods
 const METHOD_POST: &'static str = "POST";
@@ -52,7 +55,13 @@ fn bad_request() -> Response {
     response
 }
 
-fn get_header(request: &Request, key: &str) -> Option<String> {
+fn not_found() -> Response {
+    let mut response = Response::new();
+    response.status_code(STATUS_CODE_NOT_FOUND_NUMERIC, STATUS_CODE_NOT_FOUND_ALPHA);
+    response
+}
+
+fn try_get_header(request: &Request, key: &str) -> Option<String> {
     let key = key.to_lowercase();
     for (header_key, header_val) in request.headers() {
         if key == header_key.to_lowercase().trim() {
@@ -65,15 +74,9 @@ fn get_header(request: &Request, key: &str) -> Option<String> {
     None
 }
 
-fn not_found() -> Response {
-    let mut response = Response::new();
-    response.status_code(STATUS_CODE_NOT_FOUND_NUMERIC, STATUS_CODE_NOT_FOUND_ALPHA);
-    response
-}
-
 fn try_get_multipart(request: &Request) -> Option<Multipart<&[u8]>> {
     // Get any required headers
-    let content_type = get_header(request, HEADER_CONTENT_TYPE);
+    let content_type = try_get_header(request, HEADER_CONTENT_TYPE);
 
     // Sanity check: Must have Content-Type
     if let None = content_type {
@@ -142,13 +145,17 @@ impl Router {
             return bad_request();
         }
 
-        // Parse out the first two fields which are common to all requests
+        // Parse out the fields from all requests
         let mut action = None;
         let mut user_id = None;
+        let mut name = None;
+        let mut text = None;
         let mut multipart = multipart.unwrap();
         let iter = multipart.foreach_entry(|e| {
             match e.headers.name.trim().to_lowercase().as_ref() {
                 FORM_DATA_ACTION => action = try_parse_utf8(e.data),
+                FORM_DATA_NAME => name = try_parse_utf8(e.data),
+                FORM_DATA_TEXT => text = try_parse_utf8(e.data),
                 FORM_DATA_USER_ID => user_id = try_parse_utf8(e.data),
                 _ => (),
             }
@@ -168,34 +175,16 @@ impl Router {
         // Parse the correct message type
         let msg = match action.unwrap().trim().to_lowercase().as_ref() {
             ACTION_JOIN => {
-                // Parse out the name field
-                let mut name = None;
-                let iter = multipart.foreach_entry(|e| {
-                    match e.headers.name.trim().to_lowercase().as_ref() {
-                        FORM_DATA_NAME => name = try_parse_utf8(e.data),
-                        _ => (),
-                    }
-                });
-
                 // Sanity check: We should have name
-                if iter.is_err() || name.is_none() {
+                if name.is_none() {
                     return bad_request();
                 }
 
                 ChatRequest::Join(Join::new(user_id.unwrap(), name.unwrap()))
             },
             ACTION_MESSAGE => {
-                // Parse out the text field
-                let mut text = None;
-                let iter = multipart.foreach_entry(|e| {
-                    match e.headers.name.trim().to_lowercase().as_ref() {
-                        FORM_DATA_TEXT => text = try_parse_utf8(e.data),
-                        _ => (),
-                    }
-                });
-
                 // Sanity check: We should have text
-                if iter.is_err() || text.is_none() {
+                if text.is_none() {
                     return bad_request();
                 }
 
@@ -204,12 +193,25 @@ impl Router {
             _ => return bad_request(),
         };
 
-        // Process the chat logic and produce a response
-        let response = self.chat_server.respond(&msg);
+        // Process the chat logic and produce a one-liner response
+        let chat_response = self.chat_server.respond(&msg);
 
+        // Respond to the client using json
         let mut response = Response::new();
         response.header(HEADER_CONTENT_TYPE, MIME_TYPE_APPLICATION_JSON);
-        response.body(&"{}");
+        response.body(&object!{
+            "messages" => array![object!{
+                "type" => "text",
+                "text" => chat_response,
+            }],
+        }.dump());
+
+        // See if this request contains a CORS header and include a response if so
+        // TODO: A real application might limit the acceptable hosts via config file, etc
+        if try_get_header(request, HEADER_ORIGIN).is_some() {
+            response.header(HEADER_ACCESS_CONTROL_ALLOW_ORIGIN, HEADER_ACCESS_CONTROL_ALLOW_ORIGIN_STAR);
+        }
+
         response
     }
 }
