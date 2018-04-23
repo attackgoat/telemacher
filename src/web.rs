@@ -11,6 +11,8 @@ use tokio_minihttp::{Request, Response, Http};
 use tokio_proto::TcpServer;
 use tokio_service::Service;
 
+use super::chat::{Request as ChatRequest, Server as ChatServer, Join, Message};
+
 // Panics
 const PANIC_UNACCEPTABLE_HTTP_BINDING: &'static str = "Unacceptable http binding";
 
@@ -34,8 +36,10 @@ const STATUS_CODE_NOT_FOUND_NUMERIC: u32 = 404;
 // Routes
 const ROUTE_CHAT_MESSAGES: &'static str = "/chat/messages";
 
-// Form data
+// Form data fields
 const FORM_DATA_ACTION: &'static str = "action";
+const FORM_DATA_NAME: &'static str = "name";
+const FORM_DATA_TEXT: &'static str = "text";
 const FORM_DATA_USER_ID: &'static str = "user_id";
 
 // Actions
@@ -116,7 +120,9 @@ fn try_parse_utf8<R: Read>(data: R) -> Option<String> {
     }
 }
 
-pub struct Router;
+pub struct Router {
+    chat_server: ChatServer,
+}
 
 impl Router {
     pub fn serve_forever(http_binding: &str) {
@@ -126,7 +132,7 @@ impl Router {
         // The new webserver will use a thread per core
         let mut server = TcpServer::new(Http, http_binding);
         server.threads(num_cpus::get());
-        server.serve(|| Ok(Router));
+        server.serve(|| Ok(Router::default()));
     }
 
     fn chat_messages(&self, request: &Request) -> Response {
@@ -160,24 +166,59 @@ impl Router {
         }
 
         // Parse the correct message type
-        let user_id = user_id.unwrap();
         let msg = match action.unwrap().trim().to_lowercase().as_ref() {
             ACTION_JOIN => {
-                ()
+                // Parse out the name field
+                let mut name = None;
+                let iter = multipart.foreach_entry(|e| {
+                    match e.headers.name.trim().to_lowercase().as_ref() {
+                        FORM_DATA_NAME => name = try_parse_utf8(e.data),
+                        _ => (),
+                    }
+                });
+
+                // Sanity check: We should have name
+                if iter.is_err() || name.is_none() {
+                    return bad_request();
+                }
+
+                ChatRequest::Join(Join::new(user_id.unwrap(), name.unwrap()))
             },
             ACTION_MESSAGE => {
-                ()
+                // Parse out the text field
+                let mut text = None;
+                let iter = multipart.foreach_entry(|e| {
+                    match e.headers.name.trim().to_lowercase().as_ref() {
+                        FORM_DATA_TEXT => text = try_parse_utf8(e.data),
+                        _ => (),
+                    }
+                });
+
+                // Sanity check: We should have text
+                if iter.is_err() || text.is_none() {
+                    return bad_request();
+                }
+
+                ChatRequest::Message(Message::new(user_id.unwrap(), text.unwrap()))
             },
             _ => return bad_request(),
         };
 
+        // Process the chat logic and produce a response
+        let response = self.chat_server.respond(&msg);
+
         let mut response = Response::new();
-
-
-
-        response.header(HEADER_CONTENT_TYPE, MIME_TYPE_APPLICATION_JSON)
-            .body(&"{}");
+        response.header(HEADER_CONTENT_TYPE, MIME_TYPE_APPLICATION_JSON);
+        response.body(&"{}");
         response
+    }
+}
+
+impl Default for Router {
+    fn default() -> Self {
+        Self {
+            chat_server: ChatServer::default()
+        }
     }
 }
 

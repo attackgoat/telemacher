@@ -36,8 +36,8 @@ pub struct Server {
 }
 
 impl Server {
-    pub fn respond(request: &Request) -> String {
-
+    pub fn respond(&self, request: &Request) -> String {
+        String::new()
     }
 }
 
