@@ -31,8 +31,9 @@ const STATUS_CODE_NOT_FOUND_NUMERIC: u32 = 404;
 const ROUTE_CHAT_MESSAGES: &'static str = "/chat/messages";
 
 fn get_header(request: &Request, key: &str) -> Option<String> {
+    let key = key.to_lowercase();
     for (header_key, header_val) in request.headers() {
-        if key == header_key {
+        if key == header_key.to_lowercase() {
             if let Ok(val) = str::from_utf8(header_val) {
                 return Some(val.to_owned());
             }
@@ -104,7 +105,7 @@ impl Service for Router {
 
     fn call(&self, request: Request) -> Self::Future {
         future::ok(match request.path() {
-            ROUTE_CHAT_MESSAGES if request.method() == METHOD_POST => self.chat_messages(&request),
+            ROUTE_CHAT_MESSAGES if request.method().to_uppercase() == METHOD_POST => self.chat_messages(&request),
             _ => Self::not_found(),
         })
     }
