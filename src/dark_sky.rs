@@ -1,3 +1,5 @@
+use chrono::{DateTime, TimeZone};
+
 use reqwest::get;
 
 use cli::get_dark_sky_api_key;
@@ -12,10 +14,13 @@ pub struct DarkSkyApi {
 }
 
 impl DarkSkyApi {
-    pub fn try_get_forecast(&self, lat: f64, lng: f64) -> () {
+    pub fn try_get_forecast<T: TimeZone>(&self, lat: f64, lng: f64, dt: Option<DateTime<T>>) -> () {
         // Make a web request to Dark Sky asking for this data
         let api_key = get_dark_sky_api_key();
-        let mut response = get(&format!("https://api.darksky.net/forecast/{}/{},{}&exclude=alerts,flags", api_key, lat, lng));
+        let mut response = get(&match dt {
+            None => format!("https://api.darksky.net/forecast/{}/{},{}&exclude=alerts,flags", api_key, lat, lng),
+            Some(dt) => format!("https://api.darksky.net/forecast/{}/{},{},{}&exclude=alerts,flags", api_key, lat, lng, dt.timestamp()),
+        });
         if response.is_err() {
             return ();
         }

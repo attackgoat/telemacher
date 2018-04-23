@@ -1,3 +1,5 @@
+use chrono::{DateTime, FixedOffset, Local};
+
 use snips_nlu_lib::{FileBasedConfiguration, SnipsNluEngine};
 use snips_nlu_ontology::{Slot, SlotValue, Grain};
 
@@ -86,7 +88,9 @@ impl Harris {
                 },
                 s if &s.slot_name == "forecast_start_datetime" => {
                     if let &SlotValue::InstantTime(ref v) = &s.value {
-                        forecast_start_datetime = Some((v.value.to_owned(), v.grain));
+                        if let Ok(d) = DateTime::<FixedOffset>::parse_from_str(&v.value, "%Y-%m-%d %H:%M:%S %:z") {
+                            forecast_start_datetime = Some((d, v.grain));
+                        }
                     }
                 },
                 _ => (),
@@ -113,7 +117,6 @@ impl Harris {
         }
 
         let forecast_locality = forecast_locality.unwrap();
-        let forecast_start_datetime = forecast_start_datetime.unwrap();
 
         // See if we can further answer their specific question (these items must be in the training set)
         enum SpecificForecast {
@@ -156,7 +159,7 @@ impl Harris {
 
         // At this point we know they're asking about weather. We also have:
         // forecast_locality: String
-        // forecast_start_datetime: String
+        // forecast_start_datetime: Option<(DateTime<FixedOffset>, Grain)>
         // desired_forecast: Option<DesiredForecast>
 
         // Step 1: Process locality string into lat/lng
@@ -169,33 +172,73 @@ impl Harris {
 
         // Step 2: Go check the weather
         let (lat, lng) = lat_lng.unwrap();
-        let forecast = self.dark_sky_api.try_get_forecast(lat, lng);
+        let mut dt = None;
+        let mut grain = None;
+        if let Some((d, g)) = forecast_start_datetime {
+            dt = Some(d.clone());
+            grain = Some(g);
+        }
+        let forecast = self.dark_sky_api.try_get_forecast(lat, lng, dt);
 
+        // Step 3: Pick the correct combination of desired forecast and granularity so we can respond
         match desired_forecast {
             None => {
-
+                match grain {
+                    None | Some(Grain::Second) => format!("currently").to_owned(),
+                    Some(Grain::Minute) => format!("minutely").to_owned(),
+                    Some(Grain::Hour) => format!("hourly").to_owned(),
+                    Some(Grain::Year) | Some(Grain::Quarter) | Some(Grain::Month) | Some(Grain::Week) | Some(Grain::Day) => format!("daily").to_owned(),
+                }
             },
             Some(SpecificForecast::Hail) => {
-                
+                match grain {
+                    None | Some(Grain::Second) => format!("currently").to_owned(),
+                    Some(Grain::Minute) => format!("minutely").to_owned(),
+                    Some(Grain::Hour) => format!("hourly").to_owned(),
+                    Some(Grain::Year) | Some(Grain::Quarter) | Some(Grain::Month) | Some(Grain::Week) | Some(Grain::Day) => format!("daily").to_owned(),
+                }
             },
             Some(SpecificForecast::Humidity) => {
-
+                match grain {
+                    None | Some(Grain::Second) => format!("currently").to_owned(),
+                    Some(Grain::Minute) => format!("minutely").to_owned(),
+                    Some(Grain::Hour) => format!("hourly").to_owned(),
+                    Some(Grain::Year) | Some(Grain::Quarter) | Some(Grain::Month) | Some(Grain::Week) | Some(Grain::Day) => format!("daily").to_owned(),
+                }
             },
             Some(SpecificForecast::Precipitation) => {
-
+                match grain {
+                    None | Some(Grain::Second) => format!("currently").to_owned(),
+                    Some(Grain::Minute) => format!("minutely").to_owned(),
+                    Some(Grain::Hour) => format!("hourly").to_owned(),
+                    Some(Grain::Year) | Some(Grain::Quarter) | Some(Grain::Month) | Some(Grain::Week) | Some(Grain::Day) => format!("daily").to_owned(),
+                }
             },
             Some(SpecificForecast::Snow) => {
-
+                match grain {
+                    None | Some(Grain::Second) => format!("currently").to_owned(),
+                    Some(Grain::Minute) => format!("minutely").to_owned(),
+                    Some(Grain::Hour) => format!("hourly").to_owned(),
+                    Some(Grain::Year) | Some(Grain::Quarter) | Some(Grain::Month) | Some(Grain::Week) | Some(Grain::Day) => format!("daily").to_owned(),
+                }
             },
             Some(SpecificForecast::Uv) => {
-
+                match grain {
+                    None | Some(Grain::Second) => format!("currently").to_owned(),
+                    Some(Grain::Minute) => format!("minutely").to_owned(),
+                    Some(Grain::Hour) => format!("hourly").to_owned(),
+                    Some(Grain::Year) | Some(Grain::Quarter) | Some(Grain::Month) | Some(Grain::Week) | Some(Grain::Day) => format!("daily").to_owned(),
+                }
             },
             Some(SpecificForecast::Wind) => {
-
+                match grain {
+                    None | Some(Grain::Second) => format!("currently").to_owned(),
+                    Some(Grain::Minute) => format!("minutely").to_owned(),
+                    Some(Grain::Hour) => format!("hourly").to_owned(),
+                    Some(Grain::Year) | Some(Grain::Quarter) | Some(Grain::Month) | Some(Grain::Week) | Some(Grain::Day) => format!("daily").to_owned(),
+                }
             },
-        };
-
-        format!("{} = {},{}", &forecast_locality, lat, lng)
+        }
     }
 }
 

@@ -1,4 +1,5 @@
 #[macro_use] extern crate clap;
+extern crate chrono;
 extern crate futures;
 #[macro_use] extern crate json;
 extern crate lru_cache;
