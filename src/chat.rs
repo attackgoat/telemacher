@@ -39,6 +39,8 @@ impl Server {
     pub fn respond(&self, request: &Request) -> String {
         match request {
             &Request::Join(ref j) => {
+                // Joining responds the same way every time. This could be extended to either a larger
+                // list of interesting 'leads' or memory of a previous chat, etc.
                 format!("Hello, {}! I can answer your weather questions.", j.name)
             },
             &Request::Message(ref m) => {
