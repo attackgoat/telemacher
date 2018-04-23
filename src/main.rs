@@ -1,9 +1,11 @@
 #[macro_use] extern crate clap;
+extern crate chrono;
 extern crate futures;
 #[macro_use] extern crate json;
 extern crate multipart;
 extern crate num_cpus;
 extern crate snips_nlu_lib;
+extern crate snips_nlu_ontology;
 extern crate tokio_minihttp;
 extern crate tokio_proto;
 extern crate tokio_service;

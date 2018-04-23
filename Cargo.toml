@@ -4,7 +4,8 @@ version = "0.1.0"
 authors = ["john wells <john@attackgoat.com>"]
 
 [dependencies]
-num_cpus = "1.0"
+num_cpus = "1.0"    # For thread-pool size guessing
+chrono = "0.4"      # For date/time parsing 
 
 # CLI parser https://github.com/kbknapp/clap-rs
 clap = { version = "2.31", features = ["yaml"] }
@@ -25,3 +26,4 @@ json = "0.11.13"
 
 # NLU
 snips-nlu-lib = { git = "https://github.com/snipsco/snips-nlu-rs", branch = "master" }
+snips-nlu-ontology = { git = "https://github.com/snipsco/snips-nlu-ontology", tag = "0.54.3" }
