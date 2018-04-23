@@ -1,6 +1,6 @@
 pub struct Join {
     name: String,
-    user_id: u64,
+    #[allow(dead_code)] user_id: u64,
 }
 
 impl Join {
@@ -14,7 +14,7 @@ impl Join {
 
 pub struct Message {
     text: String,
-    user_id: u64,
+    #[allow(dead_code)] user_id: u64,
 }
 
 impl Message {
@@ -32,12 +32,19 @@ pub enum Request {
 }
 
 pub struct Server {
-
+    //notes: HashMap<u64, HashMap<String, String>>
 }
 
 impl Server {
     pub fn respond(&self, request: &Request) -> String {
-        String::from("Hello, world!")
+        match request {
+            &Request::Join(ref j) => {
+                format!("Hello, {}! I can answer your weather questions.", j.name)
+            },
+            &Request::Message(ref m) => {
+                m.text.to_owned()
+            }
+        }
     }
 }
 
