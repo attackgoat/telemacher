@@ -1,6 +1,6 @@
 use std::cell::RefCell;
     
-use json::JsonValue;
+use json;
 
 use lru_cache::LruCache;
 
@@ -41,7 +41,15 @@ impl GoogleApi {
         }
 
         // Parse the output json structure
-        let response: JsonValue = response.unwrap().into();
+        let response = json::parse(&response.unwrap());
+
+        // Sanity check: Good json
+        if response.is_err() {
+            return None;
+        }
+
+        // Grab the fields we want
+        let response = response.unwrap();
         let location = &response["results"][0]["geometry"]["location"];
         let lat = &location["lat"];
         let lng = &location["lng"];
