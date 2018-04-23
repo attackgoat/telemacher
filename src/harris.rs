@@ -4,6 +4,8 @@ use snips_nlu_lib::{FileBasedConfiguration, SnipsNluEngine};
 use snips_nlu_ontology::{Slot, SlotValue};
 
 use cli::get_training_file;
+use dark_sky::try_get_forecast;
+use google_maps::try_get_lat_lng;
 
 pub enum Event {
     Join(Join),
@@ -64,6 +66,10 @@ impl Harris {
                 }
             }
         }
+    }
+
+    fn respond_down() -> String {
+        "Something went terribly wrong deep inside my logic. Put me on the floor and step back.".to_owned()
     }
 
     fn respond_unsure() -> String {
@@ -152,7 +158,7 @@ impl Harris {
             Precipitation,
             Uv,
         };
-        let specific_forecast = match &forecast_condition_name {
+        let desired_forecast = match &forecast_condition_name {
             &Some(ref v) if v == "blizzard"
                          || v == "snow"
                          || v == "snowfall"
@@ -185,7 +191,19 @@ impl Harris {
         // At this point we know they're asking about weather. We also have:
         // forecast_locality: String
         // forecast_start_datetime: String
-        // specific_forecast: Option<Forecast>
+        // desired_forecast: Option<Forecast>
+
+        // Step 1: Process locality string into lat/lng
+        let lat_lng = try_get_lat_lng(&forecast_locality);
+
+        // Sanity check: We may have been unable to do that
+        if let None = lat_lng {
+            return Self::respond_down();
+        }
+
+        // Step 2: Go check the weather
+        let (lat, lng) = lat_lng.unwrap();
+        let forecast = try_get_forecast(lat, lng);
 
         "".to_owned()
     }

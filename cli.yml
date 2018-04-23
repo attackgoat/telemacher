@@ -24,6 +24,18 @@ args:
         help: Sets the (json) training file
         default_value: trained-assistant.json
         takes_value: true
+    - dark-sky-api-key:
+        short: d
+        long: dark-sky-api-key
+        value_name: KEY
+        help: Sets the API key used for Dark Sky services
+        required: true
+    - google-api-key:
+        short: g
+        long: google-api-key
+        value_name: KEY
+        help: Sets the API key used for Google services
+        required: true
 subcommands:
     - flush:
         about: Flushes geo and weather cache data

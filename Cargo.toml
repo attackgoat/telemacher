@@ -4,11 +4,15 @@ version = "0.1.0"
 authors = ["john wells <john@attackgoat.com>"]
 
 [dependencies]
-num_cpus = "1.0"    # For thread-pool size guessing
-chrono = "0.4"      # For date/time parsing 
+num_cpus = "1.0"        # For thread-pool size guessing
+chrono = "0.4"          # For date/time parsing 
+urlencoding = "1.0.0"   # Used by Google/Dark Sky client code
 
 # CLI parser https://github.com/kbknapp/clap-rs
 clap = { version = "2.31", features = ["yaml"] }
+
+# HTTP Client https://github.com/seanmonstar/reqwest
+reqwest = "0.8.5"
 
 # HTTP server
 futures = "0.1.11"
