@@ -4,7 +4,7 @@ use snips_nlu_lib::{FileBasedConfiguration, SnipsNluEngine};
 use snips_nlu_ontology::{Slot, SlotValue, Grain};
 
 use cli::get_training_file;
-use dark_sky::DarkSkyApi;
+use dark_sky::{DarkSkyApi, Forecast, Prediction};
 use google::GoogleApi;
 
 pub enum Event {
