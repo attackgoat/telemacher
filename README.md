@@ -70,7 +70,7 @@ Harris is built upon a capable engine but is deployed with only minimal training
 - Is it humid in Paris?
 - Will it be humid in Paris at 4:15PM?
 - Will it be humid in Paris at 11PM?
-- Will it be humid in Paris at tomorrow?
+- Will it be humid in Paris tomorrow?
 - How windy is Chicago?
 - What was the weather like November 22nd 1963 in Dallas Texas?
 
