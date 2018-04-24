@@ -22,8 +22,10 @@ impl Harris {
     pub fn respond(&self, e: &Event) -> String {
         match e {
             &Event::Join(ref j) => {
-                // Joining responds the same way every time. This could be extended to either a larger
-                // list of interesting 'leads' or memory of a previous chat, etc.
+                // Note: Joining doesn't currently save user_id/name combos so the problem of when to flush that cache isn't created.
+                // If you were saving such details you would want to put them into this type in a private dictionary. You might also
+                // store the other fun details in that dictionary value such as previous conversation bits, etc. Joining responds the
+                // same way every time. This could be extended to either a larger list of interesting 'leads', etc.
                 // https://goo.gl/rFY8XX
                 format!("Hello, {}, this is Harris. I'm in right now, so you can talk to me personally.", j.name)
             },
