@@ -66,7 +66,7 @@ Harris is built upon a capable engine but is deployed with only minimal training
 - Is it snowing in the Himalayas?
 - Is it snowing in Death Valley?
 - Will it snow in New York this December?
-- What does it feel like in Jamiaca right now?
+- What does it feel like in Jamaica right now?
 - Is it humid in Paris?
 - Will it be humid in Paris at 4:15PM?
 - Will it be humid in Paris at 11PM?
