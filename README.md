@@ -55,7 +55,7 @@ SUBCOMMANDS:
 ```
 ## Features
 
-I have invented an electic Harris K. Telemacher that tells you what the weather will be like at any place or time. Simply ask Harris (via his nifty REST interface) and you'll be delighted at his witty and increasingly sentient behaivor. Rest assured, Harris is only programmed to respond in a friendly manner and needs no regular servicing.
+I have invented an electric Harris K. Telemacher that tells you what the weather will be like at any place or time. Simply ask Harris (via his nifty REST interface) and you'll be delighted at his witty and increasingly sentient behaivor. Rest assured, Harris is only programmed to respond in a friendly manner and needs no regular servicing.
 
 When you ask Harris something, he will attempt to respond with the appropriate level of specificity. You may ask about a weather condition in general or you may add a date/time or range to your query.
 
