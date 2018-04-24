@@ -1,10 +1,10 @@
-use chrono::{DateTime, FixedOffset, Local};
+use chrono::{DateTime, FixedOffset};
 
 use snips_nlu_lib::{FileBasedConfiguration, SnipsNluEngine};
 use snips_nlu_ontology::{Slot, SlotValue, Grain};
 
 use cli::get_training_file;
-use dark_sky::{DarkSkyApi, Forecast, Prediction};
+use dark_sky::DarkSkyApi;
 use google::GoogleApi;
 
 pub enum Event {
@@ -206,10 +206,10 @@ impl Harris {
             },
             Some(SpecificForecast::Humidity) => {
                 match grain {
-                    None | Some(Grain::Second) => format!("{}. The current humidity is {}.", &forecast.currently.summary, forecast.currently.humidity).to_owned(),
-                    Some(Grain::Minute) => format!("{} The humidity will be {}.", &forecast.minutely.summary, forecast.minutely.humidity).to_owned(),
-                    Some(Grain::Hour) => format!("{} The humidity should be {}.", &forecast.hourly.summary, forecast.hourly.humidity).to_owned(),
-                    Some(Grain::Year) | Some(Grain::Quarter) | Some(Grain::Month) | Some(Grain::Week) | Some(Grain::Day) => format!("{} The estimated humidity is {}.", &forecast.daily.summary, forecast.daily.humidity).to_owned(),
+                    None | Some(Grain::Second) => format!("The current humidity is {:.0}%.", 100. * forecast.currently.humidity).to_owned(),
+                    Some(Grain::Minute) => format!("The humidity will be {:.0}%.", 100. * forecast.minutely.humidity).to_owned(),
+                    Some(Grain::Hour) => format!("The humidity should be {:.0}%.", 100. * forecast.hourly.humidity).to_owned(),
+                    Some(Grain::Year) | Some(Grain::Quarter) | Some(Grain::Month) | Some(Grain::Week) | Some(Grain::Day) => format!("The estimated humidity is {:.0}%.", 100. * forecast.daily.humidity).to_owned(),
                 }
             },
             Some(SpecificForecast::Precipitation) => {
@@ -222,7 +222,7 @@ None | Some(Grain::Second) => if forecast.currently.is_rainy { "It is raining." 
             },
             Some(SpecificForecast::Snow) => {
                 match grain {
-                    None | Some(Grain::Second) => if forecast.currently.is_snowy { "It is snowing." } else { "It is not showing." }.to_owned(),
+                    None | Some(Grain::Second) => if forecast.currently.is_snowy { "It is snowing." } else { "It is not snowing." }.to_owned(),
                     Some(Grain::Minute) => if forecast.minutely.is_snowy { "It will snow." } else { "It will not snow." }.to_owned(),
                     Some(Grain::Hour) => if forecast.hourly.is_snowy { "It should snow." } else { "It should not snow." }.to_owned(),
                     Some(Grain::Year) | Some(Grain::Quarter) | Some(Grain::Month) | Some(Grain::Week) | Some(Grain::Day) => if forecast.daily.is_snowy { "Snow is expected." } else { "Snow is not expected." }.to_owned(),
@@ -230,18 +230,18 @@ None | Some(Grain::Second) => if forecast.currently.is_rainy { "It is raining." 
             },
             Some(SpecificForecast::Uv) => {
                 match grain {
-                    None | Some(Grain::Second) => format!("{}. The current UV index is {}.", &forecast.currently.summary, forecast.currently.uv_index).to_owned(),
-                    Some(Grain::Minute) => format!("{} The UV index will be {}.", &forecast.minutely.summary, forecast.minutely.uv_index).to_owned(),
-                    Some(Grain::Hour) => format!("{} The UV index should be {}.", &forecast.hourly.summary, forecast.hourly.uv_index).to_owned(),
-                    Some(Grain::Year) | Some(Grain::Quarter) | Some(Grain::Month) | Some(Grain::Week) | Some(Grain::Day) => format!("{} The estimated UV index is {}.", &forecast.daily.summary, forecast.daily.uv_index).to_owned(),
+                    None | Some(Grain::Second) => format!("The current UV index is {}.", forecast.currently.uv_index).to_owned(),
+                    Some(Grain::Minute) => format!("The UV index will be {}.", forecast.minutely.uv_index).to_owned(),
+                    Some(Grain::Hour) => format!("The UV index should be {}.", forecast.hourly.uv_index).to_owned(),
+                    Some(Grain::Year) | Some(Grain::Quarter) | Some(Grain::Month) | Some(Grain::Week) | Some(Grain::Day) => format!("The estimated UV index is {}.", forecast.daily.uv_index).to_owned(),
                 }
             },
             Some(SpecificForecast::Wind) => {
                 match grain {
-                    None | Some(Grain::Second) => format!("{}. The current wind speed is {}.", &forecast.currently.summary, forecast.currently.wind_speed).to_owned(),
-                    Some(Grain::Minute) => format!("{} The wind speed will be {}.", &forecast.minutely.summary, forecast.minutely.wind_speed).to_owned(),
-                    Some(Grain::Hour) => format!("{} The wind speed should be {}.", &forecast.hourly.summary, forecast.hourly.wind_speed).to_owned(),
-                    Some(Grain::Year) | Some(Grain::Quarter) | Some(Grain::Month) | Some(Grain::Week) | Some(Grain::Day) => format!("{} The estimated wind speed is {}.", &forecast.daily.summary, forecast.daily.wind_speed).to_owned(),
+                    None | Some(Grain::Second) => format!("The current wind speed is {:.1}mph.", forecast.currently.wind_speed).to_owned(),
+                    Some(Grain::Minute) => format!("The wind speed will be {:.1}mph.", forecast.minutely.wind_speed).to_owned(),
+                    Some(Grain::Hour) => format!("The wind speed should be {:.1}mph.", forecast.hourly.wind_speed).to_owned(),
+                    Some(Grain::Year) | Some(Grain::Quarter) | Some(Grain::Month) | Some(Grain::Week) | Some(Grain::Day) => format!("The estimated wind speed is {:.1}mph.", forecast.daily.wind_speed).to_owned(),
                 }
             },
         }

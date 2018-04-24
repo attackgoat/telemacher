@@ -13,6 +13,7 @@ use cli::get_google_api_key;
 const LRU_CACHE_SIZE: usize = 16_384;
 
 pub struct GoogleApi {
+    // Basic caching mechanism to stand-in for redis
     cache: RefCell<LruCache<String, (f64, f64)>>,
 }
 
@@ -29,7 +30,7 @@ impl GoogleApi {
 
         // Make a web request to Google asking for this data
         let api_key = get_google_api_key();
-        let mut response = get(&format!("https://maps.googleapis.com/maps/api/place/textsearch/json?query={}&key={}", encode(query), api_key));
+        let response = get(&format!("https://maps.googleapis.com/maps/api/place/textsearch/json?query={}&key={}", encode(query), api_key));
         if response.is_err() {
             return None;
         }
