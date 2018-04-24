@@ -61,8 +61,8 @@ When you ask Harris something, he will attempt to respond with the appropriate l
 
 Harris is built upon a capable engine but is deployed with only minimal training. For best results use the following query patterns:
 
-- Are there rains in Spain?
-- Is it always sunny in Philadelphia?
+- Tell me about recent rainfall in Spain.
+- Is it always sunni in Philadelphia?
 - Is it snowing in the Himalayas?
 - Is it snowing in Death Valley?
 - Will it snow in New York this December?
