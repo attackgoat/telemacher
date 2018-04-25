@@ -1,4 +1,4 @@
-use std::io::{Error, Read};
+use std::io::{BufReader, Error, Read};
 use std::str;
 
 use futures::future;
@@ -107,17 +107,11 @@ fn try_get_multipart(request: &Request) -> Option<Multipart<&[u8]>> {
 }
 
 fn try_parse_utf8<R: Read>(data: R) -> Option<String> {
-    let mut buf = vec![];
-    for byte in data.bytes() {
-        if let Ok(byte) = byte {
-            buf.push(byte);
-        } else {
-            return None;
-        }
-    }
+    let mut buffer = BufReader::new(data);
+    let mut result = String::new();
 
-    if let Ok(s) = str::from_utf8(&buf) {
-        Some(s.to_owned())
+    if let Ok(_) = buffer.read_to_string(&mut result) {
+        Some(result)
     } else {
         None
     }
