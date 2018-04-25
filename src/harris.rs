@@ -7,6 +7,10 @@ use cli::get_training_file;
 use dark_sky::DarkSkyApi;
 use google::GoogleApi;
 
+// Panics
+const PANIC_UNACCEPTABLE_NLU_CONFIGURATION: &'static str = "Unacceptable nlu configuration";
+const PANIC_UNACCEPTABLE_TRAINING_FILE: &'static str = "Unacceptable training file";
+
 pub enum Event {
     Join(Join),
     Message(Message),
@@ -252,8 +256,8 @@ None | Some(Grain::Second) => if forecast.currently.is_rainy { "It is raining." 
 
 impl Default for Harris {
     fn default() -> Self {
-        let config = FileBasedConfiguration::from_path(get_training_file(), false).expect("Unacceptable training file");
-        let nlu_engine = SnipsNluEngine::new(config).expect("Unacceptable nlu configuration");
+        let config = FileBasedConfiguration::from_path(get_training_file(), false).expect(PANIC_UNACCEPTABLE_TRAINING_FILE);
+        let nlu_engine = SnipsNluEngine::new(config).expect(PANIC_UNACCEPTABLE_NLU_CONFIGURATION);
 
         Self {
             dark_sky_api: Default::default(),
