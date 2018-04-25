@@ -1,7 +1,9 @@
-#[macro_use] extern crate clap;
 extern crate chrono;
+#[macro_use]
+extern crate clap;
 extern crate futures;
-#[macro_use] extern crate json;
+#[macro_use]
+extern crate json;
 extern crate lru_cache;
 extern crate multipart;
 extern crate num_cpus;
@@ -27,7 +29,10 @@ fn main() {
     let http_binding = get_http_binding();
 
     // Sprinkle some logging
-    println!("telemacher binding to http://{}\n[press CTRL + C to stop]", &http_binding);
+    println!(
+        "telemacher binding to http://{}\n[press CTRL + C to stop]",
+        &http_binding
+    );
 
     // Load the web server and wait for CTRL + C or SIGTERM
     Router::serve_forever(&http_binding);

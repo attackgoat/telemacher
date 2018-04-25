@@ -1,5 +1,5 @@
 use std::cell::RefCell;
-    
+
 use json;
 
 use lru_cache::LruCache;
@@ -30,7 +30,11 @@ impl GoogleApi {
 
         // Make a web request to Google asking for this data
         let api_key = get_google_api_key();
-        let response = get(&format!("https://maps.googleapis.com/maps/api/place/textsearch/json?query={}&key={}", encode(query), api_key));
+        let response = get(&format!(
+            "https://maps.googleapis.com/maps/api/place/textsearch/json?query={}&key={}",
+            encode(query),
+            api_key
+        ));
         if response.is_err() {
             return None;
         }
@@ -76,7 +80,7 @@ impl GoogleApi {
 impl Default for GoogleApi {
     fn default() -> Self {
         Self {
-            cache: RefCell::new(LruCache::new(LRU_CACHE_SIZE))
+            cache: RefCell::new(LruCache::new(LRU_CACHE_SIZE)),
         }
     }
 }

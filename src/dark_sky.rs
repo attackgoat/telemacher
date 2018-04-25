@@ -16,14 +16,28 @@ pub struct DarkSkyApi {
 }
 
 impl DarkSkyApi {
-    pub fn try_get_forecast<T: TimeZone>(&self, lat: f64, lng: f64, dt: Option<DateTime<T>>) -> Option<Forecast> {
+    pub fn try_get_forecast<T: TimeZone>(
+        &self,
+        lat: f64,
+        lng: f64,
+        dt: Option<DateTime<T>>,
+    ) -> Option<Forecast> {
         // Make a web request to Dark Sky asking for this data
         let api_key = get_dark_sky_api_key();
         let response = get(&match dt {
-            None => format!("https://api.darksky.net/forecast/{}/{},{}?exclude=alerts,flags", api_key, lat, lng),
-            Some(dt) => format!("https://api.darksky.net/forecast/{}/{},{},{}?exclude=alerts,flags", api_key, lat, lng, dt.timestamp()),
+            None => format!(
+                "https://api.darksky.net/forecast/{}/{},{}?exclude=alerts,flags",
+                api_key, lat, lng
+            ),
+            Some(dt) => format!(
+                "https://api.darksky.net/forecast/{}/{},{},{}?exclude=alerts,flags",
+                api_key,
+                lat,
+                lng,
+                dt.timestamp()
+            ),
         });
-        
+
         // Sanity check: We have some text at least
         let response = response.unwrap().text();
         if response.is_err() {
@@ -80,10 +94,10 @@ impl DarkSkyApi {
         }
 
         // Sanity check: fields should be somewhat reasonable - but most should be able to be blank by default
-        if daily.is_none() || daily_humidity.is_none()
-        || hourly.is_none() || hourly_humidity.is_none()
-        || minutely.is_none()
-        || currently.is_none() || currently_humidity.is_none() {
+        if daily.is_none() || daily_humidity.is_none() || hourly.is_none()
+            || hourly_humidity.is_none() || minutely.is_none() || currently.is_none()
+            || currently_humidity.is_none()
+        {
             return None;
         }
 
@@ -129,15 +143,14 @@ impl DarkSkyApi {
                 uv_index: currently_uv_index.unwrap_or(0.into()).into(),
                 summary: currently.unwrap().to_owned(),
                 wind_speed: currently_wind_speed.unwrap_or(0.into()).into(),
-            }
+            },
         })
     }
 }
 
 impl Default for DarkSkyApi {
     fn default() -> Self {
-        Self {
-        }
+        Self {}
     }
 }
 

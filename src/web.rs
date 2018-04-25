@@ -7,7 +7,7 @@ use multipart::server::Multipart;
 
 use num_cpus;
 
-use tokio_minihttp::{Request, Response, Http};
+use tokio_minihttp::{Http, Request, Response};
 use tokio_proto::TcpServer;
 use tokio_service::Service;
 
@@ -51,7 +51,10 @@ const ACTION_MESSAGE: &'static str = "message";
 
 fn bad_request() -> Response {
     let mut response = Response::new();
-    response.status_code(STATUS_CODE_BAD_REQUEST_NUMERIC, STATUS_CODE_BAD_REQUEST_ALPHA);
+    response.status_code(
+        STATUS_CODE_BAD_REQUEST_NUMERIC,
+        STATUS_CODE_BAD_REQUEST_ALPHA,
+    );
     response
 }
 
@@ -88,7 +91,9 @@ fn try_get_multipart(request: &Request) -> Option<Multipart<&[u8]>> {
     let content_type_parts: Vec<&str> = content_type.split(';').collect();
 
     // Sanity check: Content-Type must be form data
-    if content_type_parts.len() < 2 || content_type_parts[0].to_lowercase().trim() != MIME_TYPE_MULTIPART_FORM_DATA {
+    if content_type_parts.len() < 2
+        || content_type_parts[0].to_lowercase().trim() != MIME_TYPE_MULTIPART_FORM_DATA
+    {
         return None;
     }
 
@@ -145,15 +150,14 @@ impl Router {
         let mut name = None;
         let mut text = None;
         let mut multipart = multipart.unwrap();
-        let iter = multipart.foreach_entry(|e| {
-            match e.headers.name.trim().to_lowercase().as_ref() {
+        let iter =
+            multipart.foreach_entry(|e| match e.headers.name.trim().to_lowercase().as_ref() {
                 FORM_DATA_ACTION => action = try_parse_utf8(e.data),
                 FORM_DATA_NAME => name = try_parse_utf8(e.data),
                 FORM_DATA_TEXT => text = try_parse_utf8(e.data),
                 FORM_DATA_USER_ID => user_id = try_parse_utf8(e.data),
                 _ => (),
-            }
-        });
+            });
 
         // Sanity check: We should have action and user_id
         if iter.is_err() || action.is_none() || user_id.is_none() {
@@ -175,7 +179,7 @@ impl Router {
                 }
 
                 Event::Join(Join::new(user_id.unwrap(), name.unwrap()))
-            },
+            }
             ACTION_MESSAGE => {
                 // Sanity check: We should have text
                 if text.is_none() {
@@ -183,7 +187,7 @@ impl Router {
                 }
 
                 Event::Message(Message::new(user_id.unwrap(), text.unwrap()))
-            },
+            }
             _ => return bad_request(),
         };
 
@@ -204,7 +208,10 @@ impl Router {
         // See if this request contains a CORS header and include a response if so
         // TODO: A real application might limit the acceptable hosts via config file, etc
         if try_get_header(request, HEADER_ORIGIN).is_some() {
-            response.header(HEADER_ACCESS_CONTROL_ALLOW_ORIGIN, HEADER_ACCESS_CONTROL_ALLOW_ORIGIN_STAR);
+            response.header(
+                HEADER_ACCESS_CONTROL_ALLOW_ORIGIN,
+                HEADER_ACCESS_CONTROL_ALLOW_ORIGIN_STAR,
+            );
         }
 
         response
@@ -214,7 +221,7 @@ impl Router {
 impl Default for Router {
     fn default() -> Self {
         Self {
-            harris: Default::default()
+            harris: Default::default(),
         }
     }
 }
@@ -227,7 +234,9 @@ impl Service for Router {
 
     fn call(&self, request: Request) -> Self::Future {
         future::ok(match request.path() {
-            ROUTE_CHAT_MESSAGES if request.method().to_uppercase().trim() == METHOD_POST => self.chat_messages(&request),
+            ROUTE_CHAT_MESSAGES if request.method().to_uppercase().trim() == METHOD_POST => {
+                self.chat_messages(&request)
+            }
             _ => not_found(),
         })
     }
